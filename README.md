@@ -1,6 +1,6 @@
-# Document Parser Demo
+# Document Parser Demo with RAG Chatbot
 
-A Next.js application that demonstrates document parsing using the Upstage Document Parsing API and Pinecone vector database for semantic search. This project allows users to upload documents (PDF, PNG, JPG), view the parsed content in multiple formats, and stores the content as embeddings for future semantic search.
+A Next.js application that demonstrates document parsing and RAG (Retrieval-Augmented Generation) chatbot capabilities using Upstage APIs and Pinecone vector database. This project allows users to upload documents, parse them, and interact with the content through a semantic search-powered chatbot.
 
 ## Features
 
@@ -11,6 +11,7 @@ A Next.js application that demonstrates document parsing using the Upstage Docum
   - Plain text output
 - Automatic embedding generation using Upstage API
 - Vector storage in Pinecone for semantic search
+- RAG Chatbot interface for document interaction
 - Dark theme UI for better readability
 - Real-time error handling and validation
 - Secure API key handling through environment variables
@@ -27,11 +28,13 @@ A Next.js application that demonstrates document parsing using the Upstage Docum
 ├── pages/
 │   ├── api/
 │   │   ├── parse.js        # API route for Upstage document parsing
-│   │   └── ingest.js       # API route for embedding and Pinecone storage
+│   │   ├── ingest.js       # API route for embedding and Pinecone storage
+│   │   └── chat.js         # API route for RAG chatbot
 │   ├── document-parser.js  # Document parser page
-│   └── index.js            # Landing page
-├── .env.example            # Example environment variables template
-└── .env.local             # Local environment variables (not in repo)
+│   ├── chatbot.js         # RAG chatbot interface
+│   └── index.js           # Landing page
+├── .env.example           # Example environment variables template
+└── .env.local            # Local environment variables (not in repo)
 ```
 
 ## Getting Started
@@ -71,32 +74,66 @@ A Next.js application that demonstrates document parsing using the Upstage Docum
 
 6. Open [http://localhost:3000](http://localhost:3000) with your browser to see the landing page.
 7. Navigate to [http://localhost:3000/document-parser](http://localhost:3000/document-parser) to use the document parser.
+8. Navigate to [http://localhost:3000/chatbot](http://localhost:3000/chatbot) to interact with the RAG chatbot.
+
+## How It Works
+
+### Document Processing Pipeline
+
+1. **Document Upload & Parsing**
+   - User uploads a document through the interface
+   - Document is sent to Upstage Document Parsing API
+   - API returns parsed HTML content
+
+2. **Content Embedding**
+   - Parsed HTML is split into meaningful chunks
+   - Each chunk is embedded using Upstage Embedding API
+   - Embeddings are stored in Pinecone with metadata
+
+### RAG Chatbot Pipeline
+
+1. **Query Processing**
+   - User submits a question
+   - Question is embedded using Upstage Embedding API
+   - Embedding is used to search Pinecone for relevant chunks
+
+2. **Context Retrieval**
+   - Top 5 most similar chunks are retrieved from Pinecone
+   - Chunks are combined to form context
+
+3. **Answer Generation**
+   - Context and question are sent to Upstage LLM
+   - LLM generates answer based solely on provided context
+   - If answer isn't in context, system indicates this
 
 ## Environment Variables
 
 The following environment variables are required:
 
-- `UPSTAGE_API_KEY`: Your Upstage API key for document parsing and embeddings
+- `UPSTAGE_API_KEY`: Your Upstage API key for document parsing, embeddings, and chat
 - `PINECONE_API_KEY`: Your Pinecone API key for vector storage
 - `PINECONE_INDEX_NAME`: Name of your Pinecone index (must be 4096 dimensions)
 
-You can find an example configuration in `.env.example`. Copy this file to `.env.local` and update the values with your actual API keys.
-
 ## API Integration
 
-The application integrates with two APIs:
+The application integrates with three Upstage APIs:
 
-1. Upstage Document Parsing API:
+1. Document Parsing API:
    - Endpoint: `https://api.upstage.ai/v1/document-digitization`
    - Supported file types: PDF, PNG, JPG
    - Maximum file size: 50MB
 
-2. Upstage Embedding API:
+2. Embedding API:
    - Endpoint: `https://api.upstage.ai/v1/embeddings`
    - Model: embedding-passage
    - Output dimension: 4096
 
-3. Pinecone Vector Database:
+3. Chat Completions API:
+   - Endpoint: `https://api.upstage.ai/v1/chat/completions`
+   - Model: solar-1-mini-chat
+   - Used for RAG responses
+
+4. Pinecone Vector Database:
    - Index type: Dense vectors
    - Dimension: 4096
    - Distance metric: Cosine similarity
