@@ -1,5 +1,5 @@
 import Head from 'next/head';
-import { DocumentParser } from '../components/DocumentParser';
+import { DocumentParserComponent } from '../components/DocumentParser/DocumentParserComponent';
 
 export default function DocumentParserPage() {
   return (
@@ -9,7 +9,7 @@ export default function DocumentParserPage() {
         <meta name="description" content="Document parsing demo using Upstage API" />
       </Head>
 
-      <DocumentParser />
+      <DocumentParserComponent />
     </>
   );
 } 
