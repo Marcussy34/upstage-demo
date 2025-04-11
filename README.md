@@ -18,9 +18,9 @@ A Next.js application that demonstrates document parsing using the Upstage Docum
 ```
 ├── components/
 │   └── DocumentParser/
-│       ├── index.js         # Main component with state management
-│       ├── FileUpload.js    # File input and form handling
-│       ├── OutputSection.js # Parsed content display
+│       ├── DocumentParserComponent.js  # Main component with state management
+│       ├── FileUpload.js              # File input and form handling
+│       ├── OutputSection.js           # Parsed content display
 │       └── LoadingIndicator.js
 ├── pages/
 │   ├── api/
