@@ -6,6 +6,7 @@ export default function Chatbot() {
   const [answer, setAnswer] = useState('');
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,6 +50,7 @@ export default function Chatbot() {
   };
 
   const handleClearVectors = async () => {
+    setShowConfirmModal(false); // Close modal after confirmation
     try {
       const response = await fetch('/api/delete-vectors', {
         method: 'POST',
@@ -80,22 +82,32 @@ export default function Chatbot() {
       </Head>
 
       <main>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <div className="header">
           <h1>RAG Chatbot</h1>
           <button
-            onClick={handleClearVectors}
-            style={{
-              padding: '8px 16px',
-              background: '#dc2626',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            }}
+            onClick={() => setShowConfirmModal(true)}
+            className="clear-button"
           >
             Clear All Vectors
           </button>
         </div>
+
+        {showConfirmModal && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <h2>Confirm Clear Vectors</h2>
+              <p>Are you sure you want to clear all vectors? This action cannot be undone.</p>
+              <div className="modal-buttons">
+                <button onClick={handleClearVectors} className="confirm-button">
+                  Yes, Clear All
+                </button>
+                <button onClick={() => setShowConfirmModal(false)} className="cancel-button">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
         <div className="chat-container">
           {messages.length === 0 ? (
@@ -139,12 +151,35 @@ export default function Chatbot() {
           padding: 2rem 0;
           display: flex;
           flex-direction: column;
-          align-items: center;
           width: 100%;
         }
         
-        h1 {
+        .header {
+          width: 100%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: 2rem;
+          padding: 0 0.5rem;
+        }
+
+        h1 {
+          margin: 0;
+          font-size: 2rem;
+        }
+
+        .clear-button {
+          padding: 8px 16px;
+          background: #dc2626;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+
+        .clear-button:hover {
+          background: #b91c1c;
         }
         
         .chat-container {
@@ -220,6 +255,72 @@ export default function Chatbot() {
         button:disabled {
           background-color: #ccc;
           cursor: not-allowed;
+        }
+
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        }
+
+        .modal {
+          background: white;
+          padding: 2rem;
+          border-radius: 8px;
+          max-width: 400px;
+          width: 90%;
+          text-align: center;
+        }
+
+        .modal h2 {
+          margin: 0 0 1rem 0;
+          color: #333;
+        }
+
+        .modal p {
+          margin-bottom: 1.5rem;
+          color: #666;
+        }
+
+        .modal-buttons {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+        }
+
+        .confirm-button {
+          background: #dc2626;
+          color: white;
+          border: none;
+          border-radius: 4px;
+          padding: 0.75rem 1.5rem;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+
+        .confirm-button:hover {
+          background: #b91c1c;
+        }
+
+        .cancel-button {
+          background: #e5e5e5;
+          color: #333;
+          border: none;
+          border-radius: 4px;
+          padding: 0.75rem 1.5rem;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+
+        .cancel-button:hover {
+          background: #d1d1d1;
         }
       `}</style>
     </div>
