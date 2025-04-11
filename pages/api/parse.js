@@ -2,6 +2,7 @@ import { IncomingForm } from 'formidable';
 import fs from 'fs';
 import FormData from 'form-data';
 import fetch from 'node-fetch';
+import crypto from 'crypto';
 
 // Disable default body parsing
 export const config = {
@@ -60,7 +61,30 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    return res.status(200).json(data);
+    
+    // Generate a unique document ID
+    const documentId = crypto.randomUUID();
+    
+    // Call our ingest API to store embeddings
+    const ingestResponse = await fetch(`${req.headers.origin}/api/ingest`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        documentId,
+        htmlContent: data.content.html
+      })
+    });
+
+    if (!ingestResponse.ok) {
+      console.error('Failed to store embeddings:', await ingestResponse.text());
+    }
+
+    return res.status(200).json({
+      ...data,
+      documentId
+    });
   } catch (error) {
     console.error('Error processing document:', error);
     return res.status(500).json({ error: error.message || 'Failed to process document' });
