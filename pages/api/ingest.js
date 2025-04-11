@@ -16,30 +16,62 @@ export default async function handler(req, res) {
 
     // Parse HTML and extract text chunks
     const root = parse(htmlContent);
-    const elements = root.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, td, th, pre, blockquote, table, tr');
+    const elements = root.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, td, th, pre, blockquote, table');
     
     // Extract text from elements and filter out empty strings
     const chunks = elements
       .map(el => {
         // Special handling for table elements
         if (el.tagName.toLowerCase() === 'table') {
-          // Get all rows including headers
+          const chunks = [];
           const rows = el.querySelectorAll('tr');
-          const tableText = rows.map(row => {
-            const cells = row.querySelectorAll('td, th');
-            return cells.map(cell => cell.text.trim()).join('\t');
-          }).join('\n');
-          return {
-            text: tableText,
-            tag: 'table'
-          };
+          
+          // Get headers
+          const headerRow = rows[0];
+          const headers = headerRow ? Array.from(headerRow.querySelectorAll('th, td')).map(cell => cell.text.trim()) : [];
+          
+          // Process each row
+          for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const cells = Array.from(row.querySelectorAll('td, th')).map(cell => cell.text.trim());
+            
+            // Create semantic chunks for each cell with its header
+            cells.forEach((cell, idx) => {
+              if (cell && headers[idx]) {
+                chunks.push({
+                  text: `${headers[idx]}: ${cell}`,
+                  tag: 'table-cell'
+                });
+              }
+            });
+            
+            // Also create a complete row chunk for context
+            if (cells.length > 0) {
+              const rowText = headers.map((header, idx) => `${header}: ${cells[idx] || ''}`).join('. ');
+              chunks.push({
+                text: rowText,
+                tag: 'table-row'
+              });
+            }
+          }
+          
+          // Add a summary chunk for the whole table
+          if (headers.length > 0) {
+            chunks.push({
+              text: `This table compares the following aspects: ${headers.join(', ')}`,
+              tag: 'table-summary'
+            });
+          }
+          
+          return chunks;
         }
         
-        return {
+        return [{
           text: el.text.trim(),
           tag: el.tagName.toLowerCase()
-        };
+        }];
       })
+      .flat()
       .filter(chunk => chunk.text.length > 0);
 
     if (chunks.length === 0) {

@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     const embeddingData = await embeddingResponse.json();
     const queryEmbedding = embeddingData.data[0].embedding;
 
-    // 2. Query Pinecone for similar documents
+    // 2. Query Pinecone for similar documents with higher topK for better context
     const pc = new Pinecone({
       apiKey: process.env.PINECONE_API_KEY,
     });
@@ -43,22 +43,47 @@ export default async function handler(req, res) {
     
     const queryResult = await index.query({
       vector: queryEmbedding,
-      topK: 5,
+      topK: 10, // Increased from 5 to 10 for better context
       includeMetadata: true
     });
 
-    // 3. Extract and concatenate the text from the retrieved chunks
-    const contextChunks = queryResult.matches.map(match => match.metadata.text);
-    const context = contextChunks.join('\n\n');
+    // 3. Process and organize the retrieved chunks
+    const contextChunks = queryResult.matches
+      .filter(match => match.score > 0.7) // Only use high-quality matches
+      .map(match => match.metadata.text);
 
-    // 4. Prepare prompt with context and query
-    const prompt = `Please provide the most accurate answer based only on the following context. If the answer isn't found in the context, respond with: "The information is not present in the context."
+    // Group related chunks together
+    const tableSummaries = contextChunks.filter(chunk => chunk.startsWith('This table compares'));
+    const tableRows = contextChunks.filter(chunk => chunk.includes(': '));
+    
+    // Combine chunks in a meaningful way
+    const context = [
+      ...tableSummaries,
+      ...tableRows
+    ].join('\n\n');
 
-Context: ${context}
+    if (!context.trim()) {
+      return res.status(200).json({ 
+        answer: "I don't have enough relevant information to answer that question accurately. Please try rephrasing your question or ask about a different topic."
+      });
+    }
 
-Question: ${query}`;
+    // 4. Prepare a more detailed prompt
+    const prompt = `You are a knowledgeable assistant helping to explain concepts about data types and databases. Please provide a clear and accurate answer based on the following context. If the answer cannot be fully derived from the context, only use what is explicitly stated in the context and do not make assumptions or add external information.
 
-    // 5. Send to Upstage LLM
+Context:
+${context}
+
+Question: ${query}
+
+Instructions:
+1. If answering a comparison question, structure your response with clear categories (e.g., Format, Storage, Benefits, etc.)
+2. If answering about a specific type of data, focus on its unique characteristics
+3. Use bullet points when listing multiple attributes
+4. Keep your answer concise but complete
+5. Only use information explicitly stated in the context`;
+
+    // 5. Send to Upstage LLM with adjusted parameters
     const completionResponse = await fetch('https://api.upstage.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -68,9 +93,10 @@ Question: ${query}`;
       body: JSON.stringify({
         model: 'solar-1-mini-chat',
         messages: [
+          { role: 'system', content: 'You are a data expert helping users understand different types of data and databases. Be precise and only use information from the provided context.' },
           { role: 'user', content: prompt }
         ],
-        temperature: 0.7,
+        temperature: 0.3, // Reduced for more consistent outputs
         max_tokens: 1000
       }),
     });
