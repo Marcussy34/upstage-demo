@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 
 export default function Chatbot() {
   const [query, setQuery] = useState('');
@@ -81,12 +82,37 @@ export default function Chatbot() {
         <meta name="description" content="RAG Chatbot using Pinecone and Upstage" />
       </Head>
 
+      <div style={{ position: 'fixed', top: '20px', right: '20px', display: 'flex', gap: '10px' }}>
+        <Link href="/document-parser">
+          <button
+            style={{
+              padding: '8px 16px',
+              background: '#0070f3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Go to Parser
+          </button>
+        </Link>
+      </div>
+
       <main>
-        <div className="header">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <h1>RAG Chatbot</h1>
           <button
-            onClick={() => setShowConfirmModal(true)}
-            className="clear-button"
+            onClick={handleClearVectors}
+            style={{
+              padding: '8px 16px',
+              background: '#dc2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
           >
             Clear All Vectors
           </button>
