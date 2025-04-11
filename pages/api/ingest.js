@@ -16,14 +16,30 @@ export default async function handler(req, res) {
 
     // Parse HTML and extract text chunks
     const root = parse(htmlContent);
-    const elements = root.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, td, th, pre, blockquote');
+    const elements = root.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, td, th, pre, blockquote, table, tr');
     
     // Extract text from elements and filter out empty strings
     const chunks = elements
-      .map(el => ({
-        text: el.text.trim(),
-        tag: el.tagName.toLowerCase()
-      }))
+      .map(el => {
+        // Special handling for table elements
+        if (el.tagName.toLowerCase() === 'table') {
+          // Get all rows including headers
+          const rows = el.querySelectorAll('tr');
+          const tableText = rows.map(row => {
+            const cells = row.querySelectorAll('td, th');
+            return cells.map(cell => cell.text.trim()).join('\t');
+          }).join('\n');
+          return {
+            text: tableText,
+            tag: 'table'
+          };
+        }
+        
+        return {
+          text: el.text.trim(),
+          tag: el.tagName.toLowerCase()
+        };
+      })
       .filter(chunk => chunk.text.length > 0);
 
     if (chunks.length === 0) {

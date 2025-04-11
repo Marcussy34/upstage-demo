@@ -48,6 +48,30 @@ export default function Chatbot() {
     }
   };
 
+  const handleClearVectors = async () => {
+    try {
+      const response = await fetch('/api/delete-vectors', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to clear vectors');
+      }
+
+      const data = await response.json();
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'All vectors have been cleared. Please re-upload your documents.'
+      }]);
+    } catch (error) {
+      console.error('Error:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'Failed to clear vectors. Please try again.'
+      }]);
+    }
+  };
+
   return (
     <div className="container">
       <Head>
@@ -56,7 +80,22 @@ export default function Chatbot() {
       </Head>
 
       <main>
-        <h1>RAG Chatbot</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+          <h1>RAG Chatbot</h1>
+          <button
+            onClick={handleClearVectors}
+            style={{
+              padding: '8px 16px',
+              background: '#dc2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Clear All Vectors
+          </button>
+        </div>
         
         <div className="chat-container">
           {messages.length === 0 ? (
