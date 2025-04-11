@@ -1,5 +1,6 @@
 import { Pinecone } from '@pinecone-database/pinecone';
 import fetch from 'node-fetch';
+import OpenAI from 'openai';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -83,31 +84,22 @@ Instructions:
 4. Keep your answer concise but complete
 5. Only use information explicitly stated in the context`;
 
-    // 5. Send to Upstage LLM with adjusted parameters
-    const completionResponse = await fetch('https://api.upstage.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.UPSTAGE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'solar-1-mini-chat',
-        messages: [
-          { role: 'system', content: 'You are a data expert helping users understand different types of data and databases. Be precise and only use information from the provided context.' },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.3, // Reduced for more consistent outputs
-        max_tokens: 1000
-      }),
+    // 5. Send to OpenAI GPT-4o-mini
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
     });
 
-    if (!completionResponse.ok) {
-      const errorData = await completionResponse.json();
-      throw new Error(errorData.message || 'Failed to generate completion');
-    }
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: 'system', content: 'You are a data expert helping users understand different types of data and databases. Be precise and only use information from the provided context.' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 1000
+    });
 
-    const completionData = await completionResponse.json();
-    const answer = completionData.choices[0].message.content;
+    const answer = completion.choices[0].message.content;
 
     // 6. Return the answer
     return res.status(200).json({ answer });
